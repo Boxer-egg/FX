@@ -24,7 +24,7 @@ jobs:
       - name: Create DMG
         run: |
           hdiutil create -volname "ParticleFX" \
-            -srcfolder build/ParticleFX.app \
+            -srcfolder build/ParticleFX.xcarchive/Products/Applications/ParticleFX.app
             -ov -format UDZO \
             build/ParticleFX.dmg
 
