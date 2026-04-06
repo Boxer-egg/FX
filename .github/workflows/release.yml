@@ -1,11 +1,9 @@
 # .github/workflows/release.yml
 name: Release
-
 on:
   push:
     tags:
       - 'v*'
-
 jobs:
   build:
     runs-on: macos-latest
@@ -14,11 +12,11 @@ jobs:
 
       - name: Build & Archive
         run: |
-          xcodebuild archive \
-            -scheme ParticleFX \
-            -destination 'platform=macOS'
-            -archivePath build/ParticleFX.xcarchive
-            -xcodebuild -exportArchive \
+          xcodebuild archive -scheme ParticleFX -destination 'platform=macOS,arch=arm64' -archivePath build/ParticleFX.xcarchive
+
+      - name: Export Archive
+        run: |
+          xcodebuild -exportArchive \
             -archivePath build/ParticleFX.xcarchive \
             -exportPath build/ \
             -exportOptionsPlist ExportOptions.plist
