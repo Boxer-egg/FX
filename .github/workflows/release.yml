@@ -16,6 +16,7 @@ jobs:
         run: |
           xcodebuild archive \
             -scheme ParticleFX \
+            -destination 'platform=macOS'
             -archivePath build/ParticleFX.xcarchive
           xcodebuild -exportArchive \
             -archivePath build/ParticleFX.xcarchive \
