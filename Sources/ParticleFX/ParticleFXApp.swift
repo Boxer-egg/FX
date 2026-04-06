@@ -10,8 +10,8 @@ struct ParticleFXApp: App {
     @State private var isEnabled: Bool = true
     
     var body: some Scene {
-        MenuBarExtra("Particle FX", systemImage: isEnabled ? "sparkles" : "sparkles.subtitles") {
-            Button(isEnabled ? NSLocalizedString("MENU_TOGGLE_DISABLE", comment: "") : NSLocalizedString("MENU_TOGGLE_ENABLE", comment: "")) {
+        MenuBarExtra {
+            Button(isEnabled ? NSLocalizedString("MENU_TOGGLE_DISABLE", bundle: .main, comment: "") : NSLocalizedString("MENU_TOGGLE_ENABLE", bundle: .main, comment: "")) {
                 isEnabled.toggle()
                 appDelegate.toggleOverlay(isEnabled)
             }
@@ -19,7 +19,7 @@ struct ParticleFXApp: App {
             
             Divider()
             
-            Section(NSLocalizedString("MENU_SECTION_TYPE", comment: "")) {
+            Section(NSLocalizedString("MENU_SECTION_TYPE", bundle: .main, comment: "")) {
                 ForEach(ParticleType.allCases, id: \.self) { type in
                     Button {
                         settings.currentType = type
@@ -34,7 +34,7 @@ struct ParticleFXApp: App {
                 }
             }
             Divider()
-            Section(NSLocalizedString("MENU_SECTION_LEVEL", comment: "")) {
+            Section(NSLocalizedString("MENU_SECTION_LEVEL", bundle: .main, comment: "")) {
                 ForEach(OverlayLevel.allCases, id: \.self) { level in
                     Button {
                         settings.level = level
@@ -50,14 +50,21 @@ struct ParticleFXApp: App {
                 }
             }
             Divider()
-            Button(NSLocalizedString("MENU_SETTINGS", comment: "")) {
+            Button(NSLocalizedString("MENU_SETTINGS", bundle: .main, comment: "")) {
                 appDelegate.showSettings()
             }
+            .keyboardShortcut(",") // Standard macOS shortcut for Settings (Cmd + ,)
+            
             Divider()
-            Button(NSLocalizedString("MENU_QUIT", comment: "")) {
+            Button(NSLocalizedString("MENU_QUIT", bundle: .main, comment: "")) {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
+        } label: {
+            // 使用自定义 Label 确保图标在禁用时不会消失
+            Image(systemName: "sparkles")
+                .symbolVariant(isEnabled ? .none : .slash) // 禁用时显示斜杠
+                .opacity(isEnabled ? 1.0 : 0.5) // 禁用时半透明
         }
     }
 }

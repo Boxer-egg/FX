@@ -17,8 +17,9 @@ bundle: build
 	cp $(BUILD_DIR)/$(APP_NAME) $(MACOS_DIR)/
 	
 	@echo "Copying resources..."
-	# SPM stores processed resources in a bundle. Copy lproj folders from it.
-	find $(BUILD_DIR) -name "*.lproj" -exec cp -R {} $(RESOURCES_DIR)/ \;
+	# Find lproj directories inside the build products and copy them to Resources
+	# Use -mindepth 1 to avoid copying the parent directory itself
+	find .build -name "*.lproj" -type d -exec cp -R {} $(RESOURCES_DIR)/ \;
 	
 	@echo "Creating Info.plist..."
 	@echo '<?xml version="1.0" encoding="UTF-8"?>' > $(APP_PATH)/Contents/Info.plist
