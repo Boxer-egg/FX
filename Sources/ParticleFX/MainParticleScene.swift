@@ -10,7 +10,7 @@ class MainParticleScene: SKScene {
     
     override func didMove(to view: SKView) {
         self.backgroundColor = .clear
-        self.anchorPoint = .zero // 坐标原点在左下角
+        self.anchorPoint = .zero
         setupEmitters()
     }
     
@@ -30,15 +30,19 @@ class MainParticleScene: SKScene {
         sakuraEmitter?.particleRotationSpeed = 0.5
         self.addChild(sakuraEmitter!)
         
-        // 3. Leaves (🍂)
-        leavesEmitter = createEmitter(texture: createPetalTexture(color: .orange))
-        leavesEmitter?.emissionAngle = -CGFloat.pi / 2
-        leavesEmitter?.emissionAngleRange = 0.8
-        leavesEmitter?.particleRotationRange = CGFloat.pi * 2
-        leavesEmitter?.particleRotationSpeed = 1.0
+        // 3. Leaves (🍂) - 修复重点
+        leavesEmitter = createEmitter(texture: createPetalTexture(color: .white)) // 使用白色纹理配合颜色混合
+        leavesEmitter?.particleColor = .orange
         leavesEmitter?.particleColorBlendFactor = 1.0
-        leavesEmitter?.particleColorRedRange = 0.3
-        leavesEmitter?.particleColorGreenRange = 0.3
+        leavesEmitter?.particleColorRedRange = 0.4 // 产生红-橙-黄的过渡
+        leavesEmitter?.particleColorGreenRange = 0.4
+        
+        leavesEmitter?.emissionAngle = -CGFloat.pi / 2
+        leavesEmitter?.emissionAngleRange = 1.0
+        leavesEmitter?.particleRotationRange = CGFloat.pi * 2
+        leavesEmitter?.particleRotationSpeed = 2.0 // 旋转更快
+        leavesEmitter?.particleSpeed = 120
+        leavesEmitter?.particleSpeedRange = 60
         self.addChild(leavesEmitter!)
         
         // 4. Fireflies (🪲)
@@ -66,15 +70,7 @@ class MainParticleScene: SKScene {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        let settings = AppSettings.shared
-        
-        // 每一帧都确保位置和范围是正确的
         syncEmitterPositions()
-        
-        if lastType != settings.currentType {
-            lastType = settings.currentType
-        }
-        
         syncCurrentSettings()
     }
     
@@ -83,13 +79,11 @@ class MainParticleScene: SKScene {
         let h = self.size.height
         guard w > 0 && h > 0 else { return }
         
-        // 顶部飘落型
         [snowEmitter, sakuraEmitter, leavesEmitter].forEach {
-            $0?.position = CGPoint(x: w / 2, y: h + 10)
+            $0?.position = CGPoint(x: w / 2, y: h + 20)
             $0?.particlePositionRange = CGVector(dx: w, dy: 0)
         }
         
-        // 全屏漂浮型
         firefliesEmitter?.position = CGPoint(x: w / 2, y: h / 2)
         firefliesEmitter?.particlePositionRange = CGVector(dx: w, dy: h)
     }
@@ -99,10 +93,10 @@ class MainParticleScene: SKScene {
         let type = settings.currentType
         let br = settings.birthRate
         
-        // 实时更新 BirthRate
+        // 提高落叶的密度 br / 1.5 代替之前的 br / 3.0
         snowEmitter?.particleBirthRate = (type == .snow) ? br : 0
         sakuraEmitter?.particleBirthRate = (type == .sakura) ? br / 2.0 : 0
-        leavesEmitter?.particleBirthRate = (type == .leaves) ? br / 3.0 : 0
+        leavesEmitter?.particleBirthRate = (type == .leaves) ? br / 1.5 : 0
         firefliesEmitter?.particleBirthRate = (type == .fireflies) ? br / 2.0 : 0
         
         let currentEmitter: SKEmitterNode?
