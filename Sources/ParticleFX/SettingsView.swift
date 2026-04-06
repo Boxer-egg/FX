@@ -5,27 +5,27 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Particle Settings")
+            Text(NSLocalizedString("SETTINGS_TITLE", comment: ""))
                 .font(.headline)
             
             Group {
                 VStack(alignment: .leading) {
-                    Text("Density (Birth Rate): \(Int(settings.birthRate))")
+                    Text(String(format: NSLocalizedString("SETTINGS_DENSITY", comment: ""), Int(settings.birthRate)))
                     Slider(value: $settings.birthRate, in: 0...200)
                 }
                 
                 VStack(alignment: .leading) {
-                    Text("Speed: \(Int(settings.speed))")
+                    Text(String(format: NSLocalizedString("SETTINGS_SPEED", comment: ""), Int(settings.speed)))
                     Slider(value: $settings.speed, in: 10...500)
                 }
                 
                 VStack(alignment: .leading) {
-                    Text("Scale: \(settings.scale, specifier: "%.2f")")
+                    Text(String(format: NSLocalizedString("SETTINGS_SCALE", comment: ""), settings.scale))
                     Slider(value: $settings.scale, in: 0.01...0.5)
                 }
                 
                 VStack(alignment: .leading) {
-                    Text("Opacity: \(Int(settings.opacity * 100))%")
+                    Text(String(format: NSLocalizedString("SETTINGS_OPACITY", comment: ""), Int(settings.opacity * 100)))
                     Slider(value: $settings.opacity, in: 0.1...1.0)
                 }
             }

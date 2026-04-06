@@ -11,7 +11,7 @@ struct ParticleFXApp: App {
     
     var body: some Scene {
         MenuBarExtra("Particle FX", systemImage: isEnabled ? "sparkles" : "sparkles.subtitles") {
-            Button(isEnabled ? "Disable Effects" : "Enable Effects") {
+            Button(isEnabled ? NSLocalizedString("MENU_TOGGLE_DISABLE", comment: "") : NSLocalizedString("MENU_TOGGLE_ENABLE", comment: "")) {
                 isEnabled.toggle()
                 appDelegate.toggleOverlay(isEnabled)
             }
@@ -19,13 +19,13 @@ struct ParticleFXApp: App {
             
             Divider()
             
-            Section("Effect Type") {
+            Section(NSLocalizedString("MENU_SECTION_TYPE", comment: "")) {
                 ForEach(ParticleType.allCases, id: \.self) { type in
                     Button {
                         settings.currentType = type
                     } label: {
                         HStack {
-                            Text(type.rawValue)
+                            Text(type.localizedName)
                             if settings.currentType == type {
                                 Image(systemName: "checkmark")
                             }
@@ -34,14 +34,14 @@ struct ParticleFXApp: App {
                 }
             }
             Divider()
-            Section("Layer Level") {
+            Section(NSLocalizedString("MENU_SECTION_LEVEL", comment: "")) {
                 ForEach(OverlayLevel.allCases, id: \.self) { level in
                     Button {
                         settings.level = level
                         appDelegate.updateWindowLevel()
                     } label: {
                         HStack {
-                            Text(level.rawValue)
+                            Text(level.localizedName)
                             if settings.level == level {
                                 Image(systemName: "checkmark")
                             }
@@ -50,11 +50,11 @@ struct ParticleFXApp: App {
                 }
             }
             Divider()
-            Button("Settings...") {
+            Button(NSLocalizedString("MENU_SETTINGS", comment: "")) {
                 appDelegate.showSettings()
             }
             Divider()
-            Button("Quit Particle FX") {
+            Button(NSLocalizedString("MENU_QUIT", comment: "")) {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
@@ -93,7 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 defer: false
             )
             window.center()
-            window.title = "Particle FX Settings"
+            window.title = NSLocalizedString("WINDOW_TITLE", comment: "")
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView())
             settingsWindow = window
@@ -145,7 +145,6 @@ class OverlayController {
 struct ParticleLayerView: View {
     @ObservedObject var settings = AppSettings.shared
     
-    // 整个应用生命周期内唯一的场景实例
     @State private var mainScene: MainParticleScene = {
         let s = MainParticleScene()
         s.scaleMode = .resizeFill
@@ -158,6 +157,5 @@ struct ParticleLayerView: View {
             .ignoresSafeArea()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.clear)
-            // 不再需要 .id()，因为场景内部会监听设置变化
     }
 }

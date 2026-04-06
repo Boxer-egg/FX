@@ -28,11 +28,27 @@ enum ParticleType: String, CaseIterable {
         case .fireflies: return "ant"
         }
     }
+    
+    var localizedName: String {
+        switch self {
+        case .snow: return NSLocalizedString("TYPE_SNOW", comment: "")
+        case .sakura: return NSLocalizedString("TYPE_SAKURA", comment: "")
+        case .leaves: return NSLocalizedString("TYPE_LEAVES", comment: "")
+        case .fireflies: return NSLocalizedString("TYPE_FIREFLIES", comment: "")
+        }
+    }
 }
 
 enum OverlayLevel: String, CaseIterable {
     case alwaysOnTop = "Always on Top"
     case belowWindows = "Below Windows"
+    
+    var localizedName: String {
+        switch self {
+        case .alwaysOnTop: return NSLocalizedString("LEVEL_TOP", comment: "")
+        case .belowWindows: return NSLocalizedString("LEVEL_BELOW", comment: "")
+        }
+    }
     
     var nsLevel: NSWindow.Level {
         switch self {

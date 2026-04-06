@@ -16,6 +16,10 @@ bundle: build
 	mkdir -p $(RESOURCES_DIR)
 	cp $(BUILD_DIR)/$(APP_NAME) $(MACOS_DIR)/
 	
+	@echo "Copying resources..."
+	# SPM stores processed resources in a bundle. Copy lproj folders from it.
+	find $(BUILD_DIR) -name "*.lproj" -exec cp -R {} $(RESOURCES_DIR)/ \;
+	
 	@echo "Creating Info.plist..."
 	@echo '<?xml version="1.0" encoding="UTF-8"?>' > $(APP_PATH)/Contents/Info.plist
 	@echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> $(APP_PATH)/Contents/Info.plist
