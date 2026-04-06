@@ -15,4 +15,12 @@
 "SETTINGS_SPEED" = "Speed: %d";
 "SETTINGS_SCALE" = "Scale: %.2f";
 "SETTINGS_OPACITY" = "Opacity: %d%%";
+"SETTINGS_WIND" = "Wind: %.1f";
+"SETTINGS_SIZE_RANGE" = "Size Range: %.2f";
+"LABEL_DENSITY" = "Density";
+"LABEL_SPEED" = "Speed";
+"LABEL_SCALE" = "Scale";
+"LABEL_OPACITY" = "Opacity";
+"LABEL_WIND" = "Wind";
+"LABEL_SIZE_RANGE" = "Size Var";
 "WINDOW_TITLE" = "Particle FX Settings";

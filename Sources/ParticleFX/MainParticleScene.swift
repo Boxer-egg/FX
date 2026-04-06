@@ -93,7 +93,6 @@ class MainParticleScene: SKScene {
         let type = settings.currentType
         let br = settings.birthRate
         
-        // 提高落叶的密度 br / 1.5 代替之前的 br / 3.0
         snowEmitter?.particleBirthRate = (type == .snow) ? br : 0
         sakuraEmitter?.particleBirthRate = (type == .sakura) ? br / 2.0 : 0
         leavesEmitter?.particleBirthRate = (type == .leaves) ? br / 1.5 : 0
@@ -110,8 +109,17 @@ class MainParticleScene: SKScene {
         if let emitter = currentEmitter {
             emitter.particleSpeed = settings.speed * (type == .fireflies ? 0.3 : 1.0)
             emitter.particleScale = settings.scale * 2.0 
+            emitter.particleScaleRange = settings.scaleRange * 2.0
+            emitter.xAcceleration = settings.windX * 100.0
+            
             if type != .fireflies {
                 emitter.particleAlpha = settings.opacity
+            }
+            
+            // Apply particle color if applicable
+            if type == .snow || type == .fireflies {
+                emitter.particleColor = NSColor(settings.particleColor)
+                emitter.particleColorBlendFactor = 1.0
             }
         }
     }

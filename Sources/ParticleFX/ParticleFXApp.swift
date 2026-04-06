@@ -6,79 +6,131 @@ import Combine
 @main
 struct ParticleFXApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @ObservedObject var settings = AppSettings.shared
-    @State private var isEnabled: Bool = true
     
     var body: some Scene {
-        MenuBarExtra {
-            Button(isEnabled ? NSLocalizedString("MENU_TOGGLE_DISABLE", bundle: .main, comment: "") : NSLocalizedString("MENU_TOGGLE_ENABLE", bundle: .main, comment: "")) {
-                isEnabled.toggle()
-                appDelegate.toggleOverlay(isEnabled)
-            }
-            .keyboardShortcut("t", modifiers: [.command, .shift])
-            
-            Divider()
-            
-            Section(NSLocalizedString("MENU_SECTION_TYPE", bundle: .main, comment: "")) {
-                ForEach(ParticleType.allCases, id: \.self) { type in
-                    Button {
-                        settings.currentType = type
-                    } label: {
-                        HStack {
-                            Text(type.localizedName)
-                            if settings.currentType == type {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            }
-            Divider()
-            Section(NSLocalizedString("MENU_SECTION_LEVEL", bundle: .main, comment: "")) {
-                ForEach(OverlayLevel.allCases, id: \.self) { level in
-                    Button {
-                        settings.level = level
-                        appDelegate.updateWindowLevel()
-                    } label: {
-                        HStack {
-                            Text(level.localizedName)
-                            if settings.level == level {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            }
-            Divider()
-            Button(NSLocalizedString("MENU_SETTINGS", bundle: .main, comment: "")) {
-                appDelegate.showSettings()
-            }
-            .keyboardShortcut(",") // Standard macOS shortcut for Settings (Cmd + ,)
-            
-            Divider()
-            Button(NSLocalizedString("MENU_QUIT", bundle: .main, comment: "")) {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
-        } label: {
-            // 使用自定义 Label 确保图标在禁用时不会消失
-            Image(systemName: "sparkles")
-                .symbolVariant(isEnabled ? .none : .slash) // 禁用时显示斜杠
-                .opacity(isEnabled ? 1.0 : 0.5) // 禁用时半透明
+        WindowGroup {
+            EmptyView()
+                .frame(width: 0, height: 0)
         }
     }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
+    var statusItem: NSStatusItem?
     var overlayController: OverlayController?
-    var settingsWindow: NSWindow?
+    private var cancellables = Set<AnyCancellable>()
+    var isEnabled: Bool = true
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        
+        // Setup Overlay
         overlayController = OverlayController()
         overlayController?.showOverlay()
+        
+        // Setup Status Bar Item
+        setupStatusItem()
     }
     
+    func setupStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem?.button {
+            button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil)
+            updateStatusButton()
+        }
+        updateMenu()
+    }
+    
+    func updateStatusButton() {
+        if let button = statusItem?.button {
+            button.alphaValue = isEnabled ? 1.0 : 0.5
+            button.image = NSImage(systemSymbolName: isEnabled ? "sparkles" : "sparkles.rectangle.stack", accessibilityDescription: nil)
+        }
+    }
+    
+    func updateMenu() {
+        let menu = NSMenu()
+        
+        // 1. Toggle
+        let toggleTitle = isEnabled ? NSLocalizedString("MENU_TOGGLE_DISABLE", bundle: .main, comment: "") : NSLocalizedString("MENU_TOGGLE_ENABLE", bundle: .main, comment: "")
+        let toggleItem = NSMenuItem(title: toggleTitle, action: #selector(toggleAction), keyEquivalent: "t")
+        toggleItem.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(toggleItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 2. Types
+        for (index, type) in ParticleType.allCases.enumerated() {
+            let item = NSMenuItem(title: type.localizedName, action: #selector(typeAction(_:)), keyEquivalent: "\(index + 1)")
+            item.keyEquivalentModifierMask = [.command]
+            item.representedObject = type
+            item.state = (AppSettings.shared.currentType == type) ? .on : .off
+            menu.addItem(item)
+        }
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 3. Draggable Sliders (The core request)
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_DENSITY", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.birthRate }, set: { AppSettings.shared.birthRate = $0 }), range: 0...500))
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_SPEED", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.speed }, set: { AppSettings.shared.speed = $0 }), range: 10...1000))
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_SCALE", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.scale }, set: { AppSettings.shared.scale = $0 }), range: 0.01...1.0, format: "%.2f"))
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_SIZE_RANGE", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.scaleRange }, set: { AppSettings.shared.scaleRange = $0 }), range: 0.0...0.5, format: "%.2f"))
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_OPACITY", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.opacity }, set: { AppSettings.shared.opacity = $0 }), range: 0.1...1.0, format: "%.0f", unit: "%", multiplier: 100))
+        menu.addItem(createSliderMenuItem(label: NSLocalizedString("LABEL_WIND", bundle: .main, comment: ""), value: Binding(get: { AppSettings.shared.windX }, set: { AppSettings.shared.windX = $0 }), range: -5...5, format: "%.1f"))
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 4. Level (Flattened)
+        for level in OverlayLevel.allCases {
+            let item = NSMenuItem(title: level.localizedName, action: #selector(levelAction(_:)), keyEquivalent: "")
+            item.representedObject = level
+            item.state = (AppSettings.shared.level == level) ? .on : .off
+            menu.addItem(item)
+        }
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 5. Quit
+        menu.addItem(NSMenuItem(title: NSLocalizedString("MENU_QUIT", bundle: .main, comment: ""), action: #selector(quitAction), keyEquivalent: "q"))
+        
+        statusItem?.menu = menu
+    }
+    
+    private func createSliderMenuItem(label: String, value: Binding<CGFloat>, range: ClosedRange<CGFloat>, format: String = "%.0f", unit: String = "", multiplier: CGFloat = 1.0) -> NSMenuItem {
+        let item = NSMenuItem()
+        let view = MenuSliderWrapper(label: label, value: value, range: range, format: format, unit: unit, multiplier: multiplier)
+        let hostingView = NSHostingView(rootView: view)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 250, height: 30)
+        item.view = hostingView
+        return item
+    }
+    
+    @objc func toggleAction() {
+        isEnabled.toggle()
+        toggleOverlay(isEnabled)
+        updateStatusButton()
+        updateMenu()
+    }
+    
+    @objc func typeAction(_ sender: NSMenuItem) {
+        if let type = sender.representedObject as? ParticleType {
+            AppSettings.shared.currentType = type
+            updateMenu()
+        }
+    }
+    
+    @objc func levelAction(_ sender: NSMenuItem) {
+        if let level = sender.representedObject as? OverlayLevel {
+            AppSettings.shared.level = level
+            updateWindowLevel()
+            updateMenu()
+        }
+    }
+    
+    @objc func quitAction() {
+        NSApplication.shared.terminate(nil)
+    }
+
     func updateWindowLevel() {
         overlayController?.updateLevel()
     }
@@ -90,24 +142,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             overlayController?.hideOverlay()
         }
     }
+}
+
+struct MenuSliderWrapper: View {
+    @ObservedObject var settings = AppSettings.shared
+    let label: String
+    @Binding var value: CGFloat
+    let range: ClosedRange<CGFloat>
+    let format: String
+    let unit: String
+    let multiplier: CGFloat
     
-    func showSettings() {
-        if settingsWindow == nil {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 300, height: 400),
-                styleMask: [.titled, .closable, .fullSizeContentView],
-                backing: .buffered,
-                defer: false
-            )
-            window.center()
-            window.title = NSLocalizedString("WINDOW_TITLE", comment: "")
-            window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView())
-            settingsWindow = window
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13))
+                .frame(width: 60, alignment: .leading)
+            
+            Slider(value: $value, in: range)
+                .controlSize(.small)
+            
+            Text(String(format: format, value * multiplier) + unit)
+                .font(.system(size: 12, design: .monospaced))
+                .frame(width: 45, alignment: .trailing)
         }
-        
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        .padding(.horizontal, 10)
     }
 }
 
