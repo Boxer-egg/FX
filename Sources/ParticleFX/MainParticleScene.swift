@@ -15,10 +15,12 @@ class MainParticleScene: SKScene {
     }
     
     private func setupEmitters() {
-        // 1. Snow (❄️)
-        snowEmitter = createEmitter(texture: createCircleTexture(size: 32, color: .white))
+        // 1. Snow (❄️) - 六角雪花形状，银白色
+        snowEmitter = createEmitter(texture: createSnowflakeTexture())
         snowEmitter?.emissionAngle = -CGFloat.pi / 2
         snowEmitter?.emissionAngleRange = 0.2
+        snowEmitter?.particleRotationRange = .pi * 2
+        snowEmitter?.particleRotationSpeed = 0.3
         self.addChild(snowEmitter!)
         
         // 2. Sakura (🌸)
@@ -117,9 +119,13 @@ class MainParticleScene: SKScene {
             }
             
             // Apply particle color if applicable
-            if type == .snow || type == .fireflies {
+            if type == .fireflies {
                 emitter.particleColor = NSColor(settings.particleColor)
                 emitter.particleColorBlendFactor = 1.0
+            } else if type == .snow {
+                // 雪花保持银白色
+                emitter.particleColor = NSColor(calibratedWhite: 0.95, alpha: 1.0)
+                emitter.particleColorBlendFactor = 0.3 // 轻微混合，保持纹理原色
             }
         }
     }
@@ -135,6 +141,58 @@ class MainParticleScene: SKScene {
     private func createPetalTexture(color: NSColor) -> SKTexture {
         let image = NSImage(size: CGSize(width: 64, height: 32), flipped: false) { r in
             color.set(); NSBezierPath(ovalIn: r.insetBy(dx: 2, dy: 2)).fill()
+            return true
+        }
+        return SKTexture(image: image)
+    }
+
+    private func createSnowflakeTexture() -> SKTexture {
+        let size: CGFloat = 40
+        let image = NSImage(size: CGSize(width: size, height: size), flipped: false) { r in
+            let center = CGPoint(x: r.midX, y: r.midY)
+            let radius = size / 2 - 4
+
+            // 银白色
+            NSColor(calibratedWhite: 0.95, alpha: 1.0).setStroke()
+
+            let path = NSBezierPath()
+            path.lineWidth = 2.0
+            path.lineCapStyle = .round
+
+            // 绘制六角雪花：6条主分支
+            for i in 0..<6 {
+                let angle = CGFloat(i) * .pi / 3
+                let endX = center.x + cos(angle) * radius
+                let endY = center.y + sin(angle) * radius
+
+                // 主分支
+                path.move(to: center)
+                path.line(to: CGPoint(x: endX, y: endY))
+
+                // 末端小分叉
+                let branchStart = CGPoint(
+                    x: center.x + cos(angle) * (radius * 0.6),
+                    y: center.y + sin(angle) * (radius * 0.6)
+                )
+                let sideOffset: CGFloat = .pi / 4
+                let sideLength = radius * 0.25
+
+                // 左侧小叉
+                path.move(to: branchStart)
+                path.line(to: CGPoint(
+                    x: branchStart.x + cos(angle - sideOffset) * sideLength,
+                    y: branchStart.y + sin(angle - sideOffset) * sideLength
+                ))
+
+                // 右侧小叉
+                path.move(to: branchStart)
+                path.line(to: CGPoint(
+                    x: branchStart.x + cos(angle + sideOffset) * sideLength,
+                    y: branchStart.y + sin(angle + sideOffset) * sideLength
+                ))
+            }
+
+            path.stroke()
             return true
         }
         return SKTexture(image: image)

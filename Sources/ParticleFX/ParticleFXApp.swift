@@ -8,9 +8,9 @@ struct ParticleFXApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        WindowGroup {
+        // 使用 Settings 场景，它不会创建可见窗口
+        Settings {
             EmptyView()
-                .frame(width: 0, height: 0)
         }
     }
 }
