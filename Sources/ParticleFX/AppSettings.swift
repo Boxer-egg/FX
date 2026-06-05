@@ -15,9 +15,11 @@ class AppSettings: ObservableObject {
     
     @Published var particleColor: Color = .white {
         didSet {
-            if let components = NSColor(particleColor).cgColor.components {
-                UserDefaults.standard.set(components, forKey: "particleColor")
-            }
+            let nsColor = NSColor(particleColor)
+            guard let srgb = nsColor.usingColorSpace(.sRGB) else { return }
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            srgb.getRed(&r, green: &g, blue: &b, alpha: &a)
+            UserDefaults.standard.set([r, g, b, a], forKey: "particleColor")
         }
     }
     

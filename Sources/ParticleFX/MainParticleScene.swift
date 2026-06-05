@@ -7,6 +7,7 @@ class MainParticleScene: SKScene {
     private var leavesEmitter: SKEmitterNode?
     private var firefliesEmitter: SKEmitterNode?
     private var lastType: ParticleType?
+    private var cachedSettings: (type: ParticleType, speed: CGFloat, scale: CGFloat, scaleRange: CGFloat, windX: CGFloat, opacity: CGFloat, color: Color)?
     
     override func didMove(to view: SKView) {
         self.backgroundColor = .clear
@@ -94,12 +95,23 @@ class MainParticleScene: SKScene {
         let settings = AppSettings.shared
         let type = settings.currentType
         let br = settings.birthRate
-        
+
+        let changed = cachedSettings == nil ||
+            cachedSettings!.type != type ||
+            cachedSettings!.speed != settings.speed ||
+            cachedSettings!.scale != settings.scale ||
+            cachedSettings!.scaleRange != settings.scaleRange ||
+            cachedSettings!.windX != settings.windX ||
+            cachedSettings!.opacity != settings.opacity
+        guard changed else { return }
+        cachedSettings = (type, settings.speed, settings.scale, settings.scaleRange,
+                          settings.windX, settings.opacity, settings.particleColor)
+
         snowEmitter?.particleBirthRate = (type == .snow) ? br : 0
         sakuraEmitter?.particleBirthRate = (type == .sakura) ? br / 2.0 : 0
         leavesEmitter?.particleBirthRate = (type == .leaves) ? br / 1.5 : 0
         firefliesEmitter?.particleBirthRate = (type == .fireflies) ? br / 2.0 : 0
-        
+
         let currentEmitter: SKEmitterNode?
         switch type {
         case .snow: currentEmitter = snowEmitter
@@ -107,25 +119,23 @@ class MainParticleScene: SKScene {
         case .leaves: currentEmitter = leavesEmitter
         case .fireflies: currentEmitter = firefliesEmitter
         }
-        
+
         if let emitter = currentEmitter {
             emitter.particleSpeed = settings.speed * (type == .fireflies ? 0.3 : 1.0)
-            emitter.particleScale = settings.scale * 2.0 
+            emitter.particleScale = settings.scale * 2.0
             emitter.particleScaleRange = settings.scaleRange * 2.0
             emitter.xAcceleration = settings.windX * 100.0
-            
+
             if type != .fireflies {
                 emitter.particleAlpha = settings.opacity
             }
-            
-            // Apply particle color if applicable
+
             if type == .fireflies {
                 emitter.particleColor = NSColor(settings.particleColor)
                 emitter.particleColorBlendFactor = 1.0
             } else if type == .snow {
-                // 雪花保持银白色
                 emitter.particleColor = NSColor(calibratedWhite: 0.95, alpha: 1.0)
-                emitter.particleColorBlendFactor = 0.3 // 轻微混合，保持纹理原色
+                emitter.particleColorBlendFactor = 0.3
             }
         }
     }

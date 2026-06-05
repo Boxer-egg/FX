@@ -17,17 +17,17 @@ struct ParticleFXApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     var statusItem: NSStatusItem?
-    var overlayController: OverlayController?
+    var overlayManager: OverlayManager?
     private var cancellables = Set<AnyCancellable>()
     var isEnabled: Bool = true
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        
+
         // Setup Overlay
-        overlayController = OverlayController()
-        overlayController?.showOverlay()
-        
+        overlayManager = OverlayManager()
+        overlayManager?.showOverlays()
+
         // Setup Status Bar Item
         setupStatusItem()
     }
@@ -109,21 +109,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         isEnabled.toggle()
         toggleOverlay(isEnabled)
         updateStatusButton()
-        updateMenu()
+        updateMenuStates()
     }
-    
+
     @objc func typeAction(_ sender: NSMenuItem) {
         if let type = sender.representedObject as? ParticleType {
             AppSettings.shared.currentType = type
-            updateMenu()
+            updateMenuStates()
         }
     }
-    
+
     @objc func levelAction(_ sender: NSMenuItem) {
         if let level = sender.representedObject as? OverlayLevel {
             AppSettings.shared.level = level
             updateWindowLevel()
-            updateMenu()
+            updateMenuStates()
         }
     }
     
@@ -132,14 +132,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func updateWindowLevel() {
-        overlayController?.updateLevel()
+        overlayManager?.updateLevel()
     }
-    
+
     func toggleOverlay(_ enabled: Bool) {
         if enabled {
-            overlayController?.showOverlay()
+            overlayManager?.showOverlays()
         } else {
-            overlayController?.hideOverlay()
+            overlayManager?.hideOverlays()
+        }
+    }
+
+    func updateMenuStates() {
+        guard let menu = statusItem?.menu else { return }
+        for item in menu.items {
+            switch item.action {
+            case #selector(toggleAction):
+                item.title = isEnabled
+                    ? NSLocalizedString("MENU_TOGGLE_DISABLE", bundle: .main, comment: "")
+                    : NSLocalizedString("MENU_TOGGLE_ENABLE", bundle: .main, comment: "")
+            case #selector(typeAction(_:)):
+                if let type = item.representedObject as? ParticleType {
+                    item.state = (AppSettings.shared.currentType == type) ? .on : .off
+                }
+            case #selector(levelAction(_:)):
+                if let level = item.representedObject as? OverlayLevel {
+                    item.state = (AppSettings.shared.level == level) ? .on : .off
+                }
+            default:
+                break
+            }
         }
     }
 }
@@ -170,41 +192,69 @@ struct MenuSliderWrapper: View {
     }
 }
 
-class OverlayController {
-    var window: NSWindow?
-    
+class OverlayManager {
+    var windows: [NSWindow] = []
+
     init() {
-        let screenRect = NSScreen.main?.frame ?? .zero
-        let window = NSWindow(
-            contentRect: screenRect,
-            styleMask: [.borderless, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
+        createWindows()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenParametersChanged),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
         )
-        
-        window.backgroundColor = .clear
-        window.isOpaque = false
-        window.hasShadow = false
-        window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-        window.level = AppSettings.shared.level.nsLevel
-        
-        let contentView = NSHostingView(rootView: ParticleLayerView())
-        window.contentView = contentView
-        self.window = window
     }
-    
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc func screenParametersChanged() {
+        hideOverlays()
+        windows.forEach { $0.close() }
+        windows.removeAll()
+        createWindows()
+        showOverlays()
+    }
+
+    private func createWindows() {
+        for screen in NSScreen.screens {
+            let window = NSWindow(
+                contentRect: screen.frame,
+                styleMask: [.borderless, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
+
+            window.backgroundColor = .clear
+            window.isOpaque = false
+            window.hasShadow = false
+            window.ignoresMouseEvents = true
+            window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+            window.level = AppSettings.shared.level.nsLevel
+
+            let contentView = NSHostingView(rootView: ParticleLayerView())
+            window.contentView = contentView
+            windows.append(window)
+        }
+    }
+
     func updateLevel() {
-        window?.level = AppSettings.shared.level.nsLevel
+        for window in windows {
+            window.level = AppSettings.shared.level.nsLevel
+        }
     }
-    
-    func showOverlay() {
-        window?.makeKeyAndOrderFront(nil)
-        window?.orderFrontRegardless()
+
+    func showOverlays() {
+        for window in windows {
+            window.orderFrontRegardless()
+        }
     }
-    
-    func hideOverlay() {
-        window?.orderOut(nil)
+
+    func hideOverlays() {
+        for window in windows {
+            window.orderOut(nil)
+        }
     }
 }
 
