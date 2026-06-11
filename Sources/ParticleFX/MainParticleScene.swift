@@ -7,7 +7,7 @@ class MainParticleScene: SKScene {
     private var leavesEmitter: SKEmitterNode?
     private var firefliesEmitter: SKEmitterNode?
     private var lastType: ParticleType?
-    private var cachedSettings: (type: ParticleType, speed: CGFloat, scale: CGFloat, scaleRange: CGFloat, windX: CGFloat, opacity: CGFloat, color: Color)?
+    private var cachedSettings: (type: ParticleType, birthRate: CGFloat, speed: CGFloat, scale: CGFloat, scaleRange: CGFloat, windX: CGFloat, opacity: CGFloat, color: Color)?
     
     override func didMove(to view: SKView) {
         self.backgroundColor = .clear
@@ -72,8 +72,11 @@ class MainParticleScene: SKScene {
         return emitter
     }
     
-    override func update(_ currentTime: TimeInterval) {
+    override func didChangeSize(_ oldSize: CGSize) {
         syncEmitterPositions()
+    }
+
+    override func update(_ currentTime: TimeInterval) {
         syncCurrentSettings()
     }
     
@@ -98,13 +101,15 @@ class MainParticleScene: SKScene {
 
         let changed = cachedSettings == nil ||
             cachedSettings!.type != type ||
+            cachedSettings!.birthRate != br ||
             cachedSettings!.speed != settings.speed ||
             cachedSettings!.scale != settings.scale ||
             cachedSettings!.scaleRange != settings.scaleRange ||
             cachedSettings!.windX != settings.windX ||
-            cachedSettings!.opacity != settings.opacity
+            cachedSettings!.opacity != settings.opacity ||
+            cachedSettings!.color != settings.particleColor
         guard changed else { return }
-        cachedSettings = (type, settings.speed, settings.scale, settings.scaleRange,
+        cachedSettings = (type, br, settings.speed, settings.scale, settings.scaleRange,
                           settings.windX, settings.opacity, settings.particleColor)
 
         snowEmitter?.particleBirthRate = (type == .snow) ? br : 0

@@ -4,14 +4,14 @@ import Combine
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
     
-    @Published var currentType: ParticleType = .snow { didSet { save() } }
-    @Published var birthRate: CGFloat = 50.0 { didSet { save() } }
-    @Published var speed: CGFloat = 100.0 { didSet { save() } }
-    @Published var scale: CGFloat = 0.1 { didSet { save() } }
-    @Published var scaleRange: CGFloat = 0.05 { didSet { save() } }
-    @Published var opacity: CGFloat = 0.7 { didSet { save() } }
-    @Published var windX: CGFloat = 0.0 { didSet { save() } }
-    @Published var level: OverlayLevel = .belowWindows { didSet { save() } }
+    @Published var currentType: ParticleType = .snow { didSet { UserDefaults.standard.set(currentType.rawValue, forKey: "currentType") } }
+    @Published var birthRate: CGFloat = 50.0 { didSet { UserDefaults.standard.set(birthRate, forKey: "birthRate") } }
+    @Published var speed: CGFloat = 100.0 { didSet { UserDefaults.standard.set(speed, forKey: "speed") } }
+    @Published var scale: CGFloat = 0.1 { didSet { UserDefaults.standard.set(scale, forKey: "scale") } }
+    @Published var scaleRange: CGFloat = 0.05 { didSet { UserDefaults.standard.set(scaleRange, forKey: "scaleRange") } }
+    @Published var opacity: CGFloat = 0.7 { didSet { UserDefaults.standard.set(opacity, forKey: "opacity") } }
+    @Published var windX: CGFloat = 0.0 { didSet { UserDefaults.standard.set(windX, forKey: "windX") } }
+    @Published var level: OverlayLevel = .belowWindows { didSet { UserDefaults.standard.set(level.rawValue, forKey: "level") } }
     
     @Published var particleColor: Color = .white {
         didSet {
@@ -26,18 +26,7 @@ class AppSettings: ObservableObject {
     private init() {
         load()
     }
-    
-    private func save() {
-        UserDefaults.standard.set(currentType.rawValue, forKey: "currentType")
-        UserDefaults.standard.set(birthRate, forKey: "birthRate")
-        UserDefaults.standard.set(speed, forKey: "speed")
-        UserDefaults.standard.set(scale, forKey: "scale")
-        UserDefaults.standard.set(scaleRange, forKey: "scaleRange")
-        UserDefaults.standard.set(opacity, forKey: "opacity")
-        UserDefaults.standard.set(windX, forKey: "windX")
-        UserDefaults.standard.set(level.rawValue, forKey: "level")
-    }
-    
+
     private func load() {
         if let typeStr = UserDefaults.standard.string(forKey: "currentType"), let type = ParticleType(rawValue: typeStr) {
             currentType = type

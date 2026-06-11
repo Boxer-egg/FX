@@ -167,7 +167,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 }
 
 struct MenuSliderWrapper: View {
-    @ObservedObject var settings = AppSettings.shared
     let label: String
     @Binding var value: CGFloat
     let range: ClosedRange<CGFloat>
