@@ -2,7 +2,11 @@
 
 macOS 菜单栏粒子特效应用：让雪花、樱花、落叶、萤火虫飘满你的桌面。
 
-![ParticleFX 效果](docs/screenshot.png)
+| ❄️ 雪花 | 🌸 樱花 |
+| :---: | :---: |
+| ![雪花效果](docs/screenshot-snow.png) | ![樱花效果](docs/screenshot-sakura.png) |
+| **🍂 落叶** | **✨ 萤火虫** |
+| ![落叶效果](docs/screenshot-leaves.png) | ![萤火虫效果](docs/screenshot-fireflies.png) |
 
 ## 功能
 
