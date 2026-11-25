@@ -56,7 +56,10 @@ echo "=== [2/3] 打包 $DMG ==="
 
 # ---------- 发布 Release ----------
 echo "=== [3/3] 上传 Release $TAG 到 $REPO ==="
-"$GH" release create "$TAG" "$DMG" \
+# 同时上传固定文件名副本，供官网/README 使用永久下载链接：
+# https://github.com/Boxer-egg/FX/releases/latest/download/ParticleFX.dmg
+cp "$DMG" "${APP_NAME}.dmg"
+"$GH" release create "$TAG" "$DMG" "${APP_NAME}.dmg" \
     --repo "$REPO" \
     --title "$APP_NAME $VERSION" \
     --generate-notes
