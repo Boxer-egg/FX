@@ -1,4 +1,5 @@
 APP_NAME = ParticleFX
+VERSION ?= 0.1
 BUNDLE_NAME = $(APP_NAME).app
 BUILD_DIR = .build/release
 APP_PATH = $(BUNDLE_NAME)
@@ -30,7 +31,7 @@ bundle: build
 	@echo '    <key>CFBundleIdentifier</key><string>com.user.ParticleFX</string>' >> $(APP_PATH)/Contents/Info.plist
 	@echo '    <key>CFBundleName</key><string>$(APP_NAME)</string>' >> $(APP_PATH)/Contents/Info.plist
 	@echo '    <key>CFBundlePackageType</key><string>APPL</string>' >> $(APP_PATH)/Contents/Info.plist
-	@echo '    <key>CFBundleShortVersionString</key><string>0.1</string>' >> $(APP_PATH)/Contents/Info.plist
+	@echo '    <key>CFBundleShortVersionString</key><string>$(VERSION)</string>' >> $(APP_PATH)/Contents/Info.plist
 	@echo '    <key>LSMinimumSystemVersion</key><string>13.0</string>' >> $(APP_PATH)/Contents/Info.plist
 	@echo '    <key>LSUIElement</key><true/>' >> $(APP_PATH)/Contents/Info.plist
 	@echo '    <key>NSHighResolutionCapable</key><true/>' >> $(APP_PATH)/Contents/Info.plist

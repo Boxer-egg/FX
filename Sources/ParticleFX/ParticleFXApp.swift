@@ -24,9 +24,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
+        // 恢复上次的启用状态（默认开启）
+        isEnabled = UserDefaults.standard.object(forKey: "isEnabled") as? Bool ?? true
+
         // Setup Overlay
         overlayManager = OverlayManager()
-        overlayManager?.showOverlays()
+        overlayManager?.isEnabled = isEnabled
+        if isEnabled {
+            overlayManager?.showOverlays()
+        }
 
         // Setup Status Bar Item
         setupStatusItem()
@@ -107,6 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     @objc func toggleAction() {
         isEnabled.toggle()
+        UserDefaults.standard.set(isEnabled, forKey: "isEnabled")
         toggleOverlay(isEnabled)
         updateStatusButton()
         updateMenuStates()
@@ -136,6 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func toggleOverlay(_ enabled: Bool) {
+        overlayManager?.isEnabled = enabled
         if enabled {
             overlayManager?.showOverlays()
         } else {
@@ -193,6 +201,9 @@ struct MenuSliderWrapper: View {
 
 class OverlayManager {
     var windows: [NSWindow] = []
+    var scenes: [MainParticleScene] = []
+    /// 由 AppDelegate 同步；禁用状态下屏幕变化不再自动显示
+    var isEnabled: Bool = true
 
     init() {
         createWindows()
@@ -212,8 +223,11 @@ class OverlayManager {
         hideOverlays()
         windows.forEach { $0.close() }
         windows.removeAll()
+        scenes.removeAll()
         createWindows()
-        showOverlays()
+        if isEnabled {
+            showOverlays()
+        }
     }
 
     private func createWindows() {
@@ -232,9 +246,13 @@ class OverlayManager {
             window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
             window.level = AppSettings.shared.level.nsLevel
 
-            let contentView = NSHostingView(rootView: ParticleLayerView())
-            window.contentView = contentView
+            let scene = MainParticleScene()
+            scene.scaleMode = .resizeFill
+            scene.backgroundColor = .clear
+
+            window.contentView = NSHostingView(rootView: ParticleLayerView(scene: scene))
             windows.append(window)
+            scenes.append(scene)
         }
     }
 
@@ -245,6 +263,9 @@ class OverlayManager {
     }
 
     func showOverlays() {
+        for scene in scenes {
+            scene.view?.isPaused = false
+        }
         for window in windows {
             window.orderFrontRegardless()
         }
@@ -254,21 +275,18 @@ class OverlayManager {
         for window in windows {
             window.orderOut(nil)
         }
+        // 隐藏时暂停渲染循环，避免后台空转耗电
+        for scene in scenes {
+            scene.view?.isPaused = true
+        }
     }
 }
 
 struct ParticleLayerView: View {
-    @ObservedObject var settings = AppSettings.shared
-    
-    @State private var mainScene: MainParticleScene = {
-        let s = MainParticleScene()
-        s.scaleMode = .resizeFill
-        s.backgroundColor = .clear
-        return s
-    }()
-    
+    let scene: MainParticleScene
+
     var body: some View {
-        SpriteView(scene: mainScene, options: [.allowsTransparency])
+        SpriteView(scene: scene, options: [.allowsTransparency])
             .ignoresSafeArea()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.clear)

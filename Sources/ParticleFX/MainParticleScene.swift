@@ -12,6 +12,8 @@ class MainParticleScene: SKScene {
     override func didMove(to view: SKView) {
         self.backgroundColor = .clear
         self.anchorPoint = .zero
+        // 氛围类粒子 30fps 足够，多显示器下可显著降低 GPU/CPU 占用
+        view.preferredFramesPerSecond = 30
         setupEmitters()
     }
     
